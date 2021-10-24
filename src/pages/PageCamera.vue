@@ -11,12 +11,25 @@
     </div>
     <div class="text-center q-pa-md">
       <q-btn
+        v-if="hasCameraSupport"
         @click="captureImage()"
         color="grey-10"
         icon="eva-camera"
         size="lg"
         round
       />
+      <q-file
+        v-else
+        outlined
+        v-model="imageUpload"
+        label="Choose an image"
+        accept="image/*"
+        @input="captureImageFallback"
+      >
+        <template v-slot:prepend>
+          <q-icon name="eva-attach-outline" />
+        </template>
+      </q-file>
     </div>
     <div class="row justify-center q-ma-md">
       <q-input
@@ -59,6 +72,8 @@ export default {
         date: Date.now(),
       },
       capturedImage: false,
+      imageUpload: [],
+      hasCameraSupport: true,
     };
   },
   methods: {
@@ -69,6 +84,9 @@ export default {
         })
         .then((stream) => {
           this.$refs.video.srcObject = stream;
+        })
+        .catch((error) => {
+          this.hasCameraSupport = false;
         });
     },
     captureImage() {
@@ -81,6 +99,28 @@ export default {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       this.capturedImage = true;
       this.post.photo = this.dataURItoBlob(canvas.toDataURL());
+      this.disableCamera();
+    },
+    captureImageFallback(file) {
+      console.log("file :", file);
+
+      let canvas = this.$refs.canvas;
+      let context = canvas.getContext("2d");
+
+      this.post.photo = file;
+
+      var reader = new FileReader();
+      reader.onload = (event) => {
+        var img = new Image();
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          context.drawImage(img, 0, 0);
+          this.capturedImage = true;
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
     },
     dataURItoBlob(dataURI) {
       // convert base64 to raw binary data held in a string
@@ -105,9 +145,19 @@ export default {
       var blob = new Blob([ab], { type: mimeString });
       return blob;
     },
+    disableCamera() {
+      this.$refs.video.srcObject.getVideoTracks().forEach((track) => {
+        track.stop();
+      });
+    },
   },
   mounted() {
     this.initCamera();
+  },
+  beforeDestroy() {
+    if (this.hasCameraSupport) {
+      this.disableCamera();
+    }
   },
 };
 </script>
