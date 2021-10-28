@@ -45,9 +45,11 @@
         class="col col-sm-6"
         label="Location"
         dense
+        :loading="locationLoading"
       >
         <template v-slot:append>
           <q-btn
+            v-if="!locationLoading && locationSupport"
             @click="getLocation"
             round
             dense
@@ -70,6 +72,7 @@ export default {
   name: "PageCamera",
   data() {
     return {
+      locationLoading: false,
       post: {
         id: uid(),
         caption: "",
@@ -81,6 +84,14 @@ export default {
       imageUpload: [],
       hasCameraSupport: true,
     };
+  },
+  computed: {
+    locationSupport() {
+      if ("geolocation" in navigator) {
+        return true;
+      }
+      return false;
+    },
   },
   methods: {
     initCamera() {
@@ -157,15 +168,41 @@ export default {
       });
     },
     getLocation() {
+      this.locationLoading = true;
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          console.log("position :", position);
+          this.getCityAndCountry(position);
         },
         (err) => {
-          console.log("err :", err);
+          this.locationError();
         },
         { timeout: 7000 }
       );
+    },
+    getCityAndCountry(position) {
+      let apiUrl = `http://api.positionstack.com/v1/reverse?access_key=56fc663b24c3e6a929e77eda0a3162db&query=${position.coords.latitude},${position.coords.longitude}`;
+      this.$axios
+        .get(apiUrl)
+        .then((result) => {
+          this.locationSuccess(result);
+        })
+        .catch((err) => {
+          this.locationError();
+        });
+    },
+    locationSuccess(result) {
+      this.post.location = result.data.data[0].county;
+      if (result.data.data[0].country) {
+        this.post.location += `, ${result.data.data[0].country}`;
+      }
+      this.locationLoading = false;
+    },
+    locationError() {
+      this.$q.dialog({
+        title: "Error",
+        message: "Could not find your location",
+      });
+      this.locationLoading = false;
     },
   },
   mounted() {
