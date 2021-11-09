@@ -106,7 +106,7 @@ export default {
     getPosts() {
       this.loadingPosts = true;
       this.$axios
-        .get("http://localhost:3001/posts")
+        .get(`${process.env.API}/posts`)
         .then((response) => {
           this.posts = response.data;
           this.loadingPosts = false;
@@ -114,7 +114,7 @@ export default {
         .catch((err) => {
           this.$q.dialog({
             title: "Error",
-            message: "Could not fetch data",
+            message: "Could not download post",
           });
           this.loadingPosts = true;
         });
