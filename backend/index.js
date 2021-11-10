@@ -2,9 +2,14 @@
 const express = require('express')
 let inspect = require('util').inspect;
 let Busboy = require('busboy');
+let path = require('path')
+let os = require('os')
+let fs = require('fs')
+let UUID = require('uuid-v4')
 
 const { initializeApp, applicationDefault, cert } = require('firebase-admin/app');
 const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
+const { getStorage } = require('firebase-admin/storage');
 
 // config express
 const app = express()
@@ -13,10 +18,12 @@ const app = express()
 const serviceAccount = require('./serviceAccountKey.json');
 
 initializeApp({
-  credential: cert(serviceAccount)
+  credential: cert(serviceAccount),
+  storageBucket: 'han-quasagram.appspot.com'
 });
 
 const db = getFirestore();
+let bucket = getStorage().bucket();
 
 // endpoint - posts
 app.get('/posts', (req, res) => {
@@ -33,17 +40,18 @@ app.get('/posts', (req, res) => {
 app.post('/createPost', (req, res) => {
   res.set('Access-Control-Allow-Origin', '*')
 
+  let uuid = UUID()
+
   var busboy = new Busboy({ headers: req.headers });
+
   let fields = {}
+  let fileData = {}
 
   busboy.on('file', function (fieldname, file, filename, encoding, mimetype) {
     console.log('File [' + fieldname + ']: filename: ' + filename + ', encoding: ' + encoding + ', mimetype: ' + mimetype);
-    file.on('data', function (data) {
-      console.log('File [' + fieldname + '] got ' + data.length + ' bytes');
-    });
-    file.on('end', function () {
-      console.log('File [' + fieldname + '] Finished');
-    });
+    let filepath = path.join(os.tmpdir(), filename)
+    file.pipe(fs.createWriteStream(filepath))
+    fileData = { filepath, mimetype }
   });
 
   busboy.on('field', function (fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) {
@@ -51,14 +59,34 @@ app.post('/createPost', (req, res) => {
   });
 
   busboy.on('finish', function () {
-    db.collection('posts').doc(fields.id).set({
-      id: fields.id,
-      caption: fields.caption,
-      location: fields.location,
-      date: fields.date,
-      imgUrl: 'https://firebasestorage.googleapis.com/v0/b/han-quasagram.appspot.com/o/VkPf2b6.jpeg?alt=media&token=c82d6024-8f84-449c-89e5-f1d0c2218b16',
-    })
-    res.send('Done parsing form');
+    bucket.upload(
+      fileData.filepath,
+      {
+        uploadType: 'media',
+        metadata: {
+          metadata: {
+            contentType: fileData.mimetype,
+            firebaseStorageDownloadTokens: uuid
+          }
+        }
+      },
+      (err, uploadedFile) => {
+        if (!err) {
+          createDocument(uploadedFile)
+        }
+      }
+    )
+    function createDocument(uploadedFile) {
+      db.collection('posts').doc(fields.id).set({
+        id: fields.id,
+        caption: fields.caption,
+        location: fields.location,
+        date: parseInt(fields.date),
+        imgUrl: `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${uploadedFile.name}?alt=media&token=${uuid}`,
+      }).then(() => {
+        res.send('post added: ' + fields.id)
+      })
+    }
   });
 
   req.pipe(busboy);

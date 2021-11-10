@@ -17,6 +17,7 @@
         icon="eva-camera"
         size="lg"
         round
+        :disable="capturedImage"
       />
       <q-file
         v-else
@@ -35,7 +36,7 @@
       <q-input
         v-model="post.caption"
         class="col col-sm-6"
-        label="Caption"
+        label="Caption *"
         dense
       />
     </div>
@@ -66,6 +67,7 @@
         rounded
         color="primary"
         label="Post Image"
+        :disable="!post.photo || !post.caption"
       />
     </div>
   </q-page>
@@ -211,6 +213,8 @@ export default {
       this.locationLoading = false;
     },
     addPost() {
+      this.$q.loading.show();
+
       let formData = new FormData();
       formData.append("id", this.post.id);
       formData.append("caption", this.post.caption);
@@ -221,9 +225,25 @@ export default {
         .post(`${process.env.API}/createPost`, formData)
         .then((response) => {
           console.log("response:", response);
+          this.$router.push("/");
+          this.$q.notify({
+            message: "Post created!",
+            actions: [
+              {
+                label: "Dismiss",
+                color: "white",
+              },
+            ],
+          });
+          this.$q.loading.hide();
         })
         .catch((err) => {
           console.log("err :", err);
+          this.$q.dialog({
+            title: "Error",
+            message: "Could not create post",
+          });
+          this.$q.loading.hide();
         });
     },
   },
