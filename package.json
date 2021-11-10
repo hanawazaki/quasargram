@@ -6,9 +6,12 @@
   "author": "Hairul Ardhan Nawazaki <hanawazaki002@gmail.com>",
   "private": true,
   "scripts": {
-    "test": "echo \"No test specified\" && exit 0"
+    "build": "quasar build",
+    "test": "echo \"No test specified\" && exit 0",
+    "deploy": "vercel"
   },
   "dependencies": {
+    "@quasar/cli": "^1.2.2",
     "@quasar/extras": "^1.0.0",
     "axios": "^0.21.1",
     "core-js": "^3.6.5",
@@ -16,7 +19,8 @@
     "quasar": "^1.0.0"
   },
   "devDependencies": {
-    "@quasar/app": "^2.0.0"
+    "@quasar/app": "^2.0.0",
+    "workbox-webpack-plugin": "^5.1.4"
   },
   "browserslist": [
     "ie >= 11",

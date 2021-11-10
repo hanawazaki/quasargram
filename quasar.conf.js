@@ -7,7 +7,7 @@
 // https://v1.quasar.dev/quasar-cli/quasar-conf-js
 let API_local = 'http://localhost:3001',
   API_PROD = 'https://han-quasagram-backend.herokuapp.com'
-module.exports = function (/* ctx */) {
+module.exports = function (ctx) {
   return {
     // https://v1.quasar.dev/quasar-cli/supporting-ts
     supportTS: false,
@@ -47,6 +47,7 @@ module.exports = function (/* ctx */) {
       env: {
         API: API_local
       },
+      distDir: ctx.mode.spa ? 'public' : null,
       vueRouterMode: 'hash', // available values: 'hash', 'history'
 
       // transpile: false,
