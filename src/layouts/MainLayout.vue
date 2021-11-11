@@ -13,7 +13,7 @@
         />
         <q-separator vertical spaced class="large-screen-only" />
         <q-toolbar-title class="text-grand-hotel text-bold">
-          Quasagram
+          Instaklone
         </q-toolbar-title>
         <q-btn
           to="/"

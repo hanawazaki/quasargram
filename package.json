@@ -1,8 +1,8 @@
 {
-  "name": "quasargram",
+  "name": "instaklone",
   "version": "0.0.1",
   "description": "A Quasar Framework app",
-  "productName": "Quasargram",
+  "productName": "Instaklone",
   "author": "Hairul Ardhan Nawazaki <hanawazaki002@gmail.com>",
   "private": true,
   "scripts": {
